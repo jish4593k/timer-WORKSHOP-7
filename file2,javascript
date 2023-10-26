@@ -1,0 +1,62 @@
+const readline = require('readline');
+const { spawn } = require('child_process');
+
+function countdownTimer(minutes, seconds = 0) {
+    let totalSeconds = (minutes * 60) + seconds;
+    const interval = setInterval(() => {
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        process.stdout.clearLine();
+        process.stdout.cursorTo(0);
+        process.stdout.write(`Time Remaining: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+        if (totalSeconds === 0) {
+            clearInterval(interval);
+            console.log('\nTime is up!');
+        }
+        totalSeconds -= 1;
+    }, 1000);
+}
+
+function playAudio(filePath) {
+    const audioPlayer = spawn('aplay', [filePath]); // Use 'aplay' for Linux, adjust for other platforms
+    audioPlayer.on('close', (code) => {
+        if (code === 0) {
+            console.log('Audio playback finished.');
+        } else {
+            console.error(`Audio playback error. Exit code: ${code}`);
+        }
+    });
+}
+
+function main() {
+    const args = process.argv.slice(2);
+    if (args.length < 1) {
+        console.error('Usage: node timer.js <minutes> [-s <seconds>] [-a <audio_path>]');
+        process.exit(1);
+    }
+
+    const minutes = parseInt(args[0], 10);
+    const secondsIndex = args.indexOf('-s');
+    const audioIndex = args.indexOf('-a');
+
+    let seconds = 0;
+    if (secondsIndex > -1 && secondsIndex < args.length - 1) {
+        seconds = parseInt(args[secondsIndex + 1], 10);
+    }
+
+    let audioPath = null;
+    if (audioIndex > -1 && audioIndex < args.length - 1) {
+        audioPath = args[audioIndex + 1];
+    }
+
+    console.log(`Starting a ${minutes} minute and ${seconds} second countdown`);
+    countdownTimer(minutes, seconds);
+
+    if (audioPath) {
+        playAudio(audioPath);
+    }
+}
+
+if (require.main === module) {
+    main();
+}
