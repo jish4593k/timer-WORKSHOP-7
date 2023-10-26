@@ -1,0 +1,66 @@
+import time
+import subprocess
+import argparse
+import sys
+import platform
+from playsound import playsound  # You can use this library for audio playback
+
+def countdown_timer(minutes, seconds=0):
+    total_seconds = (minutes * 60) + seconds
+    while total_seconds > 0:
+        mins, secs = divmod(total_seconds, 60)
+        timeformat = f'{mins:02d}:{secs:02d}'
+        sys.stdout.write(f'\rTime Remaining: {timeformat} ')
+        sys.stdout.flush()
+        time.sleep(1)
+        total_seconds -= 1
+    print('\nTime is up!')
+    return
+
+def play_audio(file_path):
+    try:
+        playsound(file_path)
+    except KeyboardInterrupt:
+        print('\nAudio playback stopped')
+    except Exception as e:
+        print(f'Error playing audio: {str(e)}')
+
+def get_default_audio_player():
+    """
+    Detect the default audio player based on the operating system.
+    Returns the command for playing audio.
+    """
+    system = platform.system()
+    if system == "Darwin":  # macOS
+        return 'afplay'
+    elif system == "Linux":
+        return 'aplay'
+    elif system == "Windows":
+        return 'start wmplayer'
+    else:
+        raise NotImplementedError(f"Unsupported platform: {system}")
+
+def main():
+    parser = argparse.ArgumentParser(description='Set a countdown timer and play audio when the timer is up')
+    parser.add_argument('minutes', type=int, help='The number of minutes to countdown')
+    parser.add_argument('-s', '--seconds', type=int, default=0, help='The number of seconds to countdown')
+    parser.add_argument('-a', '--audio', default=None, help='Path to an audio file to play')
+    args = parser.parse_args()
+    total_seconds = (args.minutes * 60) + args.seconds
+
+    print(f'Starting a {args.minutes} minute and {args.seconds} second countdown')
+    countdown_timer(args.minutes, args.seconds)
+
+    audio_file_path = args.audio
+
+    if audio_file_path:
+        play_audio(audio_file_path)
+    else:
+        try:
+            audio_command = get_default_audio_player()
+            subprocess.run([audio_command, 'alarm.wav'])  # Change 'alarm.wav' to your audio file
+
+    print("Timer finished!")
+
+if __name__ == "__main__":
+    main()
